@@ -392,49 +392,170 @@ try{navigator.clipboard.writeText(t.value);this.textContent='Copied!'}catch(e){d
 setTimeout(function(){document.getElementById('cp').innerHTML='{{ icon("code")|e }}Copy code'},1500)};</script>
 {% endblock %}"""
 
-T["apkbuilder.html"] = r"""{% extends "base.html" %}{% block title %}Website to APK{% endblock %}{% block body %}
-<div class="wrap" style="max-width:640px">
-<div class="top fade"><h2>{{ icon('code') }}Website to Android App</h2><a class="btn ghost sm" href="/">Home</a></div>
-<form class="box fade" id="f" method="post" action="/apkbuilder/build" enctype="multipart/form-data">
-  <h3>{{ icon('globe') }}Website</h3>
-  <div class="f2">
-    <div><label class="l">Website URL</label><input name="url" required placeholder="https://example.com"></div>
-    <div><label class="l">App name</label><input name="app_name" required maxlength="50" placeholder="My Awesome App"></div>
-  </div>
+T["apkbuilder.html"] = r"""{% extends "base.html" %}{% block title %}Website to App{% endblock %}{% block body %}
+<style>
+.ab-hero{display:flex;gap:14px;align-items:center;padding:22px;border-radius:20px;background:linear-gradient(135deg,#7c5cff22,#22d3ee14);border:1px solid var(--line);margin-bottom:18px}
+.ab-hero .ico{width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,var(--a),var(--b));display:grid;place-items:center;flex:none;box-shadow:0 8px 24px #7c5cff44}
+.ab-hero .ico .ic{width:26px;height:26px;color:#fff}
+.ab-hero h1{font-size:1.2rem}
+.ab-grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:760px){.ab-grid{grid-template-columns:1fr 300px;align-items:start}}
+.ab-section{margin-bottom:20px}
+.ab-section:last-child{margin-bottom:0}
+.ab-section h3{display:flex;gap:8px;align-items:center;font-size:.92rem;margin-bottom:12px;color:#cfd8ff}
+.ab-section h3 .ic{width:17px;height:17px;color:var(--b)}
+.toggle{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 2px;border-top:1px solid var(--line)}
+.ab-section > .toggle:first-of-type{border-top:0}
+.toggle b{display:block;font-size:.88rem;font-weight:500}
+.toggle span{font-size:.76rem;color:var(--mut)}
+.tg{position:relative;width:44px;height:25px;flex:none;border-radius:99px;background:#ffffff14;border:1px solid var(--line);cursor:pointer;transition:.25s}
+.tg i{position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:50%;background:var(--mut);transition:.25s cubic-bezier(.4,1.6,.6,1)}
+.tg input{position:absolute;inset:0;opacity:0;cursor:pointer;margin:0}
+.tg:has(input:checked){background:linear-gradient(135deg,var(--a),var(--b));border-color:transparent}
+.tg:has(input:checked) i{left:21px;background:#fff}
+.icon-drop{display:flex;align-items:center;gap:14px;padding:14px;border:1.5px dashed var(--line);border-radius:14px;cursor:pointer;transition:.25s}
+.icon-drop:hover{border-color:var(--a);background:#7c5cff0d}
+.icon-drop .ic{width:22px;height:22px;color:var(--b)}
+.icon-drop span{font-size:.82rem;color:var(--mut)}
+.icon-drop input{display:none}
+#ipv{width:46px;height:46px;border-radius:12px;object-fit:cover;flex:none;display:none;border:1px solid var(--line)}
+.ab-preview{position:sticky;top:14px;border-radius:22px;background:var(--card);border:1px solid var(--line);padding:18px;text-align:center}
+.ab-preview h4{font-size:.78rem;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;display:flex;gap:7px;align-items:center;justify-content:center}
+.ab-preview h4 .ic{width:14px;height:14px}
+.phone{width:200px;margin:auto;border:7px solid #11151f;border-radius:34px;overflow:hidden;background:#fff;box-shadow:0 20px 50px #0008;transition:.3s}
+.phone-bar{height:40px;display:flex;align-items:center;gap:8px;padding:0 10px;transition:background .3s}
+.phone-bar .pic{width:22px;height:22px;border-radius:6px;background:#fff3;display:grid;place-items:center;font-weight:700;color:#fff;font-size:.72rem;flex:none;overflow:hidden}
+.phone-bar .pic img{width:100%;height:100%;object-fit:cover}
+.phone-bar b{color:#fff;font-size:.74rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.phone-body{height:280px;background:#f3f5fb;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:16px;transition:.3s}
+.phone-body b{font-size:.8rem;color:#1a1f2e}
+.phone-body span{font-size:.66rem;color:#8a94a9;word-break:break-all}
+.phone-body.dark{background:#15192a}
+.phone-body.dark b{color:#fff}
+.notch{width:60px;height:16px;background:#11151f;border-radius:0 0 12px 12px;margin:auto}
+.btn.big{width:100%;padding:15px;font-size:.95rem;position:relative;overflow:hidden}
+.ripple{position:absolute;border-radius:50%;background:#ffffff55;transform:scale(0);animation:rip .6s ease-out forwards;pointer-events:none}
+@keyframes rip{to{transform:scale(3);opacity:0}}
+</style>
 
-  <h3 style="margin-top:18px">{{ icon('settings') }}App details</h3>
-  <div class="f2">
-    <div><label class="l">Package name (optional)</label><input name="package" placeholder="com.example.myapp"></div>
-    <div><label class="l">Status bar color</label><input name="status_color" type="color" value="#7c5cff" style="padding:4px;height:46px"></div>
-    <div><label class="l">Version name</label><input name="version_name" value="1.0.0"></div>
-    <div><label class="l">Version code</label><input name="version_code" type="number" value="1" min="1"></div>
-  </div>
-  <label class="l" style="margin-top:12px">App icon (optional, PNG/JPG)</label>
-  <input type="file" name="icon" accept="image/png,image/jpeg,image/webp">
+<div class="wrap" style="max-width:920px">
+<div class="top fade"><h2>{{ icon('code') }}Website to App</h2><a class="btn ghost sm" href="/">Home</a></div>
 
-  <h3 style="margin-top:18px">{{ icon('eye') }}Behavior</h3>
-  <label class="sw" style="margin:8px 0"><input type="checkbox" name="fullscreen" value="1">Fullscreen (hide status bar)</label>
-  <label class="sw" style="margin:8px 0"><input type="checkbox" name="dark_mode" value="1">Force dark mode</label>
-  <label class="sw" style="margin:8px 0"><input type="checkbox" name="exit_confirm" value="1">Ask before exiting the app</label>
-  <label class="sw" style="margin:8px 0"><input type="checkbox" name="open_external" value="1" checked>Open other websites' links in the phone's browser</label>
-  <label class="sw" style="margin:8px 0"><input type="checkbox" name="media_autoplay" value="1">Allow audio/video to autoplay</label>
-
-  <h3 style="margin-top:18px">{{ icon('lock') }}Permissions</h3>
-  <label class="sw" style="margin:8px 0"><input type="checkbox" name="allow_camera" value="1">Camera access (for pages that use it)</label>
-  <label class="sw" style="margin:8px 0"><input type="checkbox" name="allow_mic" value="1">Microphone access (for pages that use it)</label>
-
-  <h3 style="margin-top:18px">{{ icon('code') }}Custom code (optional)</h3>
-  <label class="l">Custom CSS, runs on every page</label>
-  <textarea name="custom_css" class="mono" style="min-height:90px" placeholder="body { background: #fff; }"></textarea>
-  <label class="l" style="margin-top:10px">Custom JavaScript, runs on every page</label>
-  <textarea name="custom_js" class="mono" style="min-height:90px" placeholder="console.log('app started');"></textarea>
-
-  <button class="btn" id="go" style="width:100%;margin-top:18px">{{ icon('download') }}Generate Android project</button>
-  <div id="st" class="mut" style="margin-top:10px;min-height:20px"></div>
-</form>
-<p class="mut fade" style="--d:120ms;font-size:.8rem">This downloads a ready-to-build Android project (source code), not a finished APK. Build it for free at github.com using GitHub Actions - no computer needed. Only wrap websites you own or have permission to package as an app.</p>
+<div class="ab-hero fade">
+  <div class="ico">{{ icon('globe') }}</div>
+  <div><h1>Turn any website into an Android app</h1><div class="mut" style="font-size:.84rem">Fill in the details, generate the project, build the APK for free in the cloud.</div></div>
 </div>
+
+<div class="ab-grid">
+<form id="f" method="post" action="/apkbuilder/build" enctype="multipart/form-data">
+
+  <div class="box ab-section fade" style="--d:60ms">
+    <h3>{{ icon('globe') }}Website</h3>
+    <div class="f2">
+      <div><label class="l">Website URL</label><input name="url" id="url" required placeholder="https://example.com"></div>
+      <div><label class="l">App name</label><input name="app_name" id="app_name" required maxlength="50" placeholder="My Awesome App"></div>
+    </div>
+  </div>
+
+  <div class="box ab-section fade" style="--d:100ms">
+    <h3>{{ icon('settings') }}App details</h3>
+    <div class="f2">
+      <div><label class="l">Package name</label><input name="package" id="package" placeholder="com.example.myapp"></div>
+      <div><label class="l">Status bar color</label><input name="status_color" id="status_color" type="color" value="#7c5cff" style="padding:4px;height:46px"></div>
+      <div><label class="l">Version name</label><input name="version_name" value="1.0.0"></div>
+      <div><label class="l">Version code</label><input name="version_code" type="number" value="1" min="1"></div>
+    </div>
+    <label class="l" style="margin-top:14px">App icon (optional)</label>
+    <label class="icon-drop"><img id="ipv" alt=""><input type="file" id="icon" name="icon" accept="image/png,image/jpeg,image/webp">{{ icon('image') }}<span>PNG or JPG, square works best</span></label>
+  </div>
+
+  <div class="box ab-section fade" style="--d:140ms">
+    <h3>{{ icon('eye') }}Behavior</h3>
+    <div class="toggle"><div><b>Fullscreen</b><span>Hide the status bar</span></div><label class="tg"><input type="checkbox" name="fullscreen" id="t_full" value="1"><i></i></label></div>
+    <div class="toggle"><div><b>Dark mode</b><span>Force a dark theme for the app</span></div><label class="tg"><input type="checkbox" name="dark_mode" id="t_dark" value="1"><i></i></label></div>
+    <div class="toggle"><div><b>Exit confirmation</b><span>Ask before closing with Back</span></div><label class="tg"><input type="checkbox" name="exit_confirm" value="1"><i></i></label></div>
+    <div class="toggle"><div><b>Open external links in browser</b><span>Links to other sites leave the app</span></div><label class="tg"><input type="checkbox" name="open_external" value="1" checked><i></i></label></div>
+    <div class="toggle"><div><b>Media autoplay</b><span>Let audio/video start without a tap</span></div><label class="tg"><input type="checkbox" name="media_autoplay" value="1"><i></i></label></div>
+  </div>
+
+  <div class="box ab-section fade" style="--d:180ms">
+    <h3>{{ icon('lock') }}Permissions</h3>
+    <div class="toggle"><div><b>Camera access</b><span>For pages that use the camera</span></div><label class="tg"><input type="checkbox" name="allow_camera" value="1"><i></i></label></div>
+    <div class="toggle"><div><b>Microphone access</b><span>For pages that record audio</span></div><label class="tg"><input type="checkbox" name="allow_mic" value="1"><i></i></label></div>
+  </div>
+
+  <div class="box ab-section fade" style="--d:220ms">
+    <h3>{{ icon('code') }}Custom code</h3>
+    <label class="l">Custom CSS, runs on every page</label>
+    <textarea name="custom_css" class="mono" style="min-height:80px" placeholder="body { background: #fff; }"></textarea>
+    <label class="l" style="margin-top:10px">Custom JavaScript, runs on every page</label>
+    <textarea name="custom_js" class="mono" style="min-height:80px" placeholder="console.log('app started');"></textarea>
+  </div>
+
+  <button class="btn big fade" id="go" style="--d:260ms">{{ icon('download') }}Generate Android project</button>
+  <div id="st" class="mut" style="margin-top:10px;min-height:20px;text-align:center"></div>
+</form>
+
+<div class="ab-preview fade" style="--d:120ms">
+  <h4>{{ icon('eye') }}Live preview</h4>
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="phone-bar" id="pbar" style="background:#7c5cff">
+      <div class="pic" id="ppic">A</div>
+      <b id="pname">My Awesome App</b>
+    </div>
+    <div class="phone-body" id="pbody">
+      <b id="pwelcome">Welcome to My Awesome App</b>
+      <span id="phost">yourwebsite.com</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<p class="mut fade" style="--d:300ms;font-size:.8rem;margin-top:16px">This generates a ready-to-build Android project (source code), not a finished APK. Build it for free at github.com using GitHub Actions, no computer needed. Only wrap websites you own or have permission to package as an app.</p>
+</div>
+
 <script>
+var $=function(id){return document.getElementById(id)};
+function slug(s){return (s||'').toLowerCase().replace(/[^a-z0-9]/g,'')||'app'}
+function syncPreview(){
+  var name=$('app_name').value.trim()||'My Awesome App';
+  $('pname').textContent=name;
+  $('pwelcome').textContent='Welcome to '+name;
+  var u=$('url').value.trim();
+  $('phost').textContent=u? u.replace(/^https?:\/\//,'').split('/')[0] : 'yourwebsite.com';
+  var c=$('status_color').value||'#7c5cff';
+  $('pbar').style.background=c;
+  if(!$('package').value||$('package').dataset.auto!=='0'){
+    $('package').value='com.'+slug(name)+'.app';
+    $('package').dataset.auto='1';
+  }
+  if(!$('ipv').src || $('ipv').style.display==='none'){ $('ppic').textContent=(name[0]||'A').toUpperCase(); }
+}
+$('app_name').addEventListener('input', syncPreview);
+$('url').addEventListener('input', syncPreview);
+$('status_color').addEventListener('input', syncPreview);
+$('package').addEventListener('input', function(){ this.dataset.auto='0' });
+$('t_full').addEventListener('change', function(){ $('pbar').style.opacity=this.checked?'.0':'1'; });
+$('t_dark').addEventListener('change', function(){ $('pbody').classList.toggle('dark', this.checked); });
+$('icon').addEventListener('change', function(){
+  var f=this.files[0]; if(!f) return;
+  var url=URL.createObjectURL(f);
+  var img=$('ipv'); img.src=url; img.style.display='block';
+  var pic=$('ppic'); pic.innerHTML=''; var i=document.createElement('img'); i.src=url; pic.append(i);
+});
+syncPreview();
+
+document.querySelectorAll('.btn').forEach(function(b){
+  b.addEventListener('click', function(e){
+    var r=document.createElement('span'); r.className='ripple';
+    var rect=b.getBoundingClientRect();
+    r.style.left=(e.clientX-rect.left-10)+'px'; r.style.top=(e.clientY-rect.top-10)+'px';
+    r.style.width=r.style.height='20px';
+    b.appendChild(r); setTimeout(function(){ r.remove(); }, 650);
+  });
+});
+
 document.getElementById('f').addEventListener('submit', function(e){
   e.preventDefault();
   var btn=document.getElementById('go'), st=document.getElementById('st');
