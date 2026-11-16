@@ -23,17 +23,34 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.7"
+          gradle-version: "8.10.2"
       - name: Build
         env:
           TASK: ${{ github.event.inputs.task || 'assembleDebug' }}
-        run: gradle $TASK --no-daemon --stacktrace
+        run: |
+          set +e
+          echo "=== APKORA BUILD START ==="
+          ROOT=$(find . -maxdepth 3 \( -name settings.gradle -o -name settings.gradle.kts \) -not -path "*/node_modules/*" | head -1)
+          if [ -z "$ROOT" ]; then
+            echo "NOT_GRADLE: no settings.gradle or settings.gradle.kts found in this repository"
+            echo "=== APKORA BUILD END (2) ==="
+            exit 2
+          fi
+          cd "$(dirname "$ROOT")"
+          echo "Project folder: $(pwd)"
+          if [ -f gradlew ]; then chmod +x gradlew; CMD="./gradlew"; else CMD="gradle"; fi
+          echo "Using: $CMD"
+          if [ -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then yes | timeout 120 "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null 2>&1; fi
+          $CMD $TASK --no-daemon --stacktrace 2>&1
+          code=$?
+          echo "=== APKORA BUILD END ($code) ==="
+          exit $code
       - name: Upload build outputs
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: android-build
           path: |
-            app/build/outputs/apk/**/*.apk
-            app/build/outputs/bundle/**/*.aab
+            **/build/outputs/apk/**/*.apk
+            **/build/outputs/bundle/**/*.aab
           if-no-files-found: ignore
